@@ -13,7 +13,7 @@ class Parameters:
         pass
 
     sunRadius = Config.getfloat("sun", "radius")
-    planetRadius = Config.getfloat("planet", "radius") * sunRadius
+    planet_radius = Config.getfloat("planet", "radius") * sunRadius
     sunMass = Config.getfloat("sun", "mass")
     dmass_1 = Config.getfloat("common", "dmass_1") * sunMass
     dmass_2 = Config.getfloat("common", "dmass_2")  # 0.0006*dmsun
