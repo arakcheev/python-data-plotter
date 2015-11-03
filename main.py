@@ -14,15 +14,15 @@ import math
 
 params = Parameters.Parameters
 
-# files = glob.glob("test_data/*.out")
+files = glob.glob("test_data/*.out")
+
+initial_file = files.pop(0)
 
 # outFiles = glob.glob("srez/*.png")
-# n = 0
-# totalFiles = float(files.__len__())
-#
-# initial_file = files.pop(0)
-#
-# initial_data = FileData.FileData(initial_file)
+n = 0
+totalFiles = float(files.__len__())
+
+initial_data = FileData.FileData(initial_file)
 
 data = FileData.FileData("z=0_ful_1_t00001709_n00000032.out")
 initial = FileData.FileData("z=0_ful_1_t00000000_n00000000.out")
