@@ -1,180 +1,86 @@
 __author__ = 'artem'
 
 import numpy as np
-from Utils import (get_index, make_set)
-from spacepy.pybats import PbData
+import re
+from spacepy import dmarray
+from Model import Model
+import Parameters
+
+params = Parameters.Parameters
 
 
-class TecData(PbData):
+class TecData(Model):
     def __init__(self, file_name, *args, **kwargs):
         super(TecData, self).__init__(*args, **kwargs)  # Init as PbData
         self.attrs['file'] = file_name
         self.read()
+        self['log_rho'] = np.log(self['rho'])
 
-    def __extract_from_string(self, str):
-        splited = str.strip().split("=")
-
-        if splited.__len__() > 1:
-            return splited[1].replace('"', '')
-        else:
-            return splited[0]
+    def __extract_variables(self, str):
+        return re.search('VARIABLES = (.*)', str).group(1).replace('"', '').split(", ")
 
     def __extract_zone(self, str):
-        import re
+        groups = re.search('ZONE T="(.*)", I=(.*), J=(.*), K=(.*), F=(.*)', str)
 
-        data = str.strip().split("ZONE ")[1].split(",")
+        I = int(groups.group(2))
+        J = int(groups.group(3))
+        K = int(groups.group(4))
 
-        for line in data:
-            trimed = re.sub('[\s+]', '', line).split("=")
-            name = trimed[0]
-            value = trimed[1]
-
-            if name == "N" or name == "E":
-                self.attrs[name] = int(value)
+        self["ndim"] = 3
+        self['grid'] = dmarray([I, J, K])
+        self['grid'].attrs['gtype'] = 'Exponential'
+        self['grid'].attrs['nx'] = I
+        self['grid'].attrs['ny'] = J
+        self['grid'].attrs['nz'] = K
 
     def __extract_aux_data(self, file):
-        for i in range(0, 20):
-            file.readline()
+        for i in range(0, 1):
+            line = file.readline()
+            groups = re.search('AUXDATA (.*) = "(.*)"', line)
+
+            if groups.group(1).lower() == "time":
+                self['time'] = float(groups.group(2))
 
     def read(self):
-
-        from spacepy.datamodel import dmarray
-
         f = open(self.attrs['file'])
-        self.attrs['title'] = self.__extract_from_string(f.readline())
-        self.__extract_from_string(f.readline())
+        # self.attrs['title'] = self.__extract_from_string(f.readline())
+        names = map(str.lower, self.__extract_variables(f.readline()))
         self.__extract_zone(f.readline())
         self.__extract_aux_data(f)
 
-        # First read all data from file
-        data = ['']
-        for j in range(0, self.attrs['N']):
-            data.append(f.readline())
+        temp_data = dict()
 
-        # Next read all data from file and fill grid
-        indices = []
-        x = []
-        y = []
-        for j in range(0, self.attrs['E']):
-            line = f.readline()
-            indices.append(line)
-            line = line.strip().split()
-            p1 = int(line[0])
-            p3 = int(line[1])
-            p2 = int(line[2])
-            p4 = int(line[3])
-            str1 = data[p1].strip().split()
-            str2 = data[p2].strip().split()
-            str3 = data[p3].strip().split()
-            str4 = data[p4].strip().split()
-            x1 = float(str1[0])
-            y1 = float(str1[1])
-            z1 = float(str1[2])
-            x2 = float(str2[0])
-            y2 = float(str2[1])
-            z2 = float(str2[2])
-            x3 = float(str3[0])
-            y3 = float(str3[1])
-            z3 = float(str3[2])
-            x4 = float(str4[0])
-            y4 = float(str4[1])
-            z4 = float(str4[2])
-            x.append(x1)
-            y.append(y1)
-            x.append(x2)
-            y.append(y2)
-            x.append(x3)
-            y.append(y3)
-            x.append(x4)
-            y.append(y4)
+        for i in range(0, names.__len__()):
+            name = names[i].lower()
+            temp_data[name] = dmarray(np.zeros(self['grid']))
 
-        self['x'] = dmarray(np.sort(np.array(make_set(x))), attrs={'units': 'R'})
-        self['y'] = dmarray(np.sort(np.array(make_set(y))), attrs={'units': 'R'})
+        # Read 3d data
+        for k in range(0, self['grid'][2]):
+            for j in range(0, self['grid'][1]):
+                for i in range(0, self['grid'][0]):
+                    data = f.readline().split()
+                    for ii in range(0, names.__len__()):
+                        temp_data[names[ii]][i, j, k] = data[ii]
 
-        self['grid'] = dmarray([self['x'].__len__(), self['y'].__len__()])
+        f.close()
 
-        rho = np.zeros((self['grid'][1], self['grid'][0]))
-        # ux = np.zeros(self['grid'])
-        # uy = np.zeros(self['grid'])
+        # Fill 2d data to plotting                
+        k_middle = self['grid'][2] / 2
 
-        # Fill other data
-        for j in range(0, self.attrs['E']):
-            line = indices[j].strip().split()
-            p1 = int(line[0])
-            p3 = int(line[1])
-            p2 = int(line[2])
-            p4 = int(line[3])
-            str1 = data[p1].strip().split()
-            str2 = data[p2].strip().split()
-            str3 = data[p3].strip().split()
-            str4 = data[p4].strip().split()
-            x1 = float(str1[0])
-            y1 = float(str1[1])
-            z1 = float(str1[2])
-            x2 = float(str2[0])
-            y2 = float(str2[1])
-            z2 = float(str2[2])
-            x3 = float(str3[0])
-            y3 = float(str3[1])
-            z3 = float(str3[2])
-            x4 = float(str4[0])
-            y4 = float(str4[1])
-            z4 = float(str4[2])
+        # Units in planet radii
+        self['x'] = temp_data['x'][:, 0, k_middle] * params.ab / params.planet_radius
 
-            x1_index = get_index(self['x'], x1)
-            x2_index = get_index(self['x'], x2)
-            x3_index = get_index(self['x'], x3)
-            x4_index = get_index(self['x'], x4)
-
-            y1_index = get_index(self['y'], y1)
-            y2_index = get_index(self['y'], y2)
-            y3_index = get_index(self['y'], y3)
-            y4_index = get_index(self['y'], y4)
-
-            rho[y1_index, x1_index] = str1[3]
-            rho[y2_index, x2_index] = str2[3]
-            rho[y3_index, x3_index] = str3[3]
-            rho[y4_index, x4_index] = str4[3]
-
-            # ux[x1_index, y1_index] = str1[4]
-            # ux[x2_index, y2_index] = str2[4]
-            # ux[x3_index, y3_index] = str3[4]
-            # ux[x4_index, y4_index] = str4[4]
-            #
-            # uy[x1_index, y1_index] = str1[5]
-            # uy[x2_index, y2_index] = str2[5]
-            # uy[x3_index, y3_index] = str3[5]
-            # uy[x4_index, y4_index] = str4[5]
-
-        self['rho'] = dmarray(rho)
-
-        print self['grid']
-
+        tmp = dmarray(np.zeros(self['grid'][1]))
         for j in range(0, self['grid'][1]):
-            for i in range(0, self['grid'][0]):
-                if self['rho'][j, i] == 0:
+            tmp[j] = temp_data['y'][0, j, k_middle]
+        self['y'] = tmp * params.ab / params.planet_radius
 
-                    if j == 0 and i == 0:
-                        self['rho'][j, i] = (self['rho'][j + 1, i]
-                                             + self['rho'][j, i + 1] + self['rho'][j + 1, i + 1]) / 3
-                    elif j == 0:
-                        self['rho'][j, i] = (self['rho'][j + 1, i]
-                                             + self['rho'][j, i - 1] + self['rho'][j, i + 1]) / 3
-                    elif i == 0:
-                        self['rho'][j, i] = (self['rho'][j + 1, i]
-                                             + self['rho'][j - 1, i] + self['rho'][j, i + 1]) / 3
-                    elif i == self['grid'][0] - 1:
-                        self['rho'][j, i] = (self['rho'][j - 1, i] + self['rho'][j + 1, i]
-                                             + self['rho'][j, i - 1]) / 3
-                    elif j == self['grid'][1] - 1:
-                        self['rho'][j, i] = (self['rho'][j - 1, i] + self['rho'][j, i + 1]
-                                             + self['rho'][j, i - 1]) / 3
-                    elif j == self['grid'][1] - 1 and i == self['grid'][0] - 1:
-                        self['rho'][j, i] = (self['rho'][j - 1, i] + self['rho'][j, i - 1]
-                                             + self['rho'][j - 1, i - 1]) / 3
-                    else:
-                        self['rho'][j, i] = (self['rho'][j - 1, i] + self['rho'][j + 1, i]
-                                             + self['rho'][j, i - 1] + self['rho'][j, i + 1]) / 4
+        for i in range(3, names.__len__()):
+            name = names[i].lower()
+            self[name] = dmarray(np.zeros((self['grid'][1], self['grid'][0])))
 
-                        # self['ux'] = dmarray(ux)
-                        # self['uy'] = dmarray(uy)
+        gen = (name for name in names if name not in ['x', 'y', 'z'])
+        for name in gen:
+            for j in range(0, self['grid'][1]):
+                for i in range(0, self['grid'][0]):
+                    self[name][j, i] = temp_data[name][i, j, k_middle]
