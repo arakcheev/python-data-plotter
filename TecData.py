@@ -10,6 +10,13 @@ params = Parameters.Parameters
 
 
 class TecData(Model):
+    def sub_title(self):
+        return ' time = ' + "{:.2}".format(self['time']) + " "
+
+    def get_name(self):
+        name_groups = re.search('(.*)a(.*).dat', self.attrs['file'])
+        return name_groups.group(2)
+
     def __init__(self, file_name, *args, **kwargs):
         super(TecData, self).__init__(*args, **kwargs)  # Init as PbData
         self.attrs['file'] = file_name

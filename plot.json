@@ -1,0 +1,34 @@
+{
+  "data": {
+    "folder": "/Volumes/Storage/workspace/inasan/nurgush/exp_grid/",
+    "pattern": "*.dat",
+    "start": 0,
+    "end": 1,
+    "target": "",
+    "create_target_dir": false
+  },
+  "figures": [
+    {
+      "items": [
+        "contour",
+        "roche_lobe"
+      ],
+      "save": false,
+      "title": "T = 7500",
+      "out_name": "contour_"
+    }
+  ],
+  "types": {
+    "contour": {
+      "var": "log_rho",
+      "var_legend": "ln(rho)",
+      "levels_step": 0.1
+    },
+    "roche_lobe": {
+    }
+  },
+  "execution": {
+    "nodes": 1,
+    "item_number": 0
+  }
+}

@@ -6,6 +6,7 @@ from TecData import TecData
 from Parameters import Parameters
 import glob
 import matplotlib.pyplot as plt
+import re
 
 folder = "/Volumes/Storage/workspace/inasan/nurgush/exp_grid/"
 pattern = "*.dat"
@@ -17,7 +18,7 @@ if not os.path.exists(target):
 
 files = glob.glob(folder + pattern)
 
-# initial_data = FileData(files.pop(0))
+initial_data = TecData(files.pop(0))
 
 n = 0
 totalFiles = float(files.__len__())
@@ -28,14 +29,16 @@ def calc_staff(i):
     print "Plot file  (" + "{0:.2f}".format(i / totalFiles * 100) + "%) " + str(file_name)
     file_data = TecData(file_name)
 
-    figure, (ax1, ax2) = plt.subplots(2)
+    groups = re.search('(.*)a(.*).dat', file_name)
 
-    (_, y) = file_data.srez_y('log_rho', 3.0, ax1)
-    ax1.set_ylabel(r"rho")
+    figure, ax1 = plt.subplots()
+
+    (_, y) = file_data.slice_y('log_rho', 0.1, ax1, initial_data=initial_data)
+    ax1.set_ylabel(r"log rho")
     ax1.grid(which='both')
     # ax1.set_xlim([-15, 15])
 
-    # file_data.srez_y('T', 3.0, ax2)
+    # file_data.slice_y('T', 3.0, ax2)
     # ax2.set_ylabel("p/rho")
     # ax2.grid(which='both')
     # ax2.set_xlim([-15, 15])
@@ -44,13 +47,16 @@ def calc_staff(i):
 
     # figure.set_size_inches(10.5, 18.5, forward=True)
 
-    # plt.savefig(target + "slice_" + str(file_data.attrs['iter']) + '.png')
-    plt.show()
+    plt.savefig(target + "slice_" + groups.group(2) + '.png')
+    # plt.show()
     plt.close(figure)
 
 
-calc_staff(0)
-# import multiprocessing; pool = multiprocessing.Pool(4); pool.map(calc_staff, range(0, files.__len__()))
+# calc_staff(1)
+import multiprocessing;
+
+pool = multiprocessing.Pool(4);
+pool.map(calc_staff, range(0, files.__len__()))
 
 # target = "/Volumes/Storage/workspace/inasan/SWMF/results13.01.16/sliceComparison/logT/"
 # 

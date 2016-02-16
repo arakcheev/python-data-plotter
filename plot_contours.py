@@ -8,6 +8,10 @@ import glob
 import matplotlib.pyplot as plt
 import os
 import re
+import ConfigParser
+
+Config = ConfigParser.ConfigParser()
+Config.read("parameters.cfg")
 
 # folder = "/Users/artem/workspace/inasan/nurgushmpi/bin/data/"
 folder = "/Volumes/Storage/workspace/inasan/nurgush/exp_grid/"
