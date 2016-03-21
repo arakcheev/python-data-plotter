@@ -1,40 +1,45 @@
 __author__ = 'artem'
 
 import numpy as np
-import re
 from spacepy import dmarray
 from Model import Model
 import Parameters
+import struct
 
 params = Parameters.Parameters
 
 
-class TecData(Model):
+class NurgushBinData(Model):
     def sub_title(self):
         return ' time = ' + "{:.2}".format(self['time']) + " "
 
     def get_name(self):
-        name_groups = re.search('(.*)a(.*).dat', self.attrs['file'])
-        return name_groups.group(2)
+        return str(self['iter'])
 
     def __init__(self, file_name, *args, **kwargs):
-        super(TecData, self).__init__(*args, **kwargs)  # Init as PbData
+        super(NurgushBinData, self).__init__(*args, **kwargs)  # Init as PbData
         self.attrs['file'] = file_name
         self.read()
         self['log_rho'] = np.log(self['rho'])
-        # self['T'] = np.log10((10e7 / 1.3806) * (self['p'] / (self['rho'])))
-        print self['grid']
 
-    def __extract_variables(self, str):
-        return re.search('VARIABLES = (.*)', str).group(1).replace('"', '').split(", ")
+    def read(self):
+        _file = open(self.attrs['file'], 'rb')
+        endian = '<'
 
-    def __extract_zone(self, str):
-        groups = re.search('ZONE T="(.*)", I=(.*), J=(.*), K=(.*), F=(.*)', str)
+        reclen_raw = _file.read(4)
 
-        I = int(groups.group(2))
-        J = int(groups.group(3))
-        K = int(groups.group(4))
+        rec_len = struct.unpack(endian + 'i', reclen_raw)[0]
+        if rec_len > 10000 or rec_len < 0:
+            endian = '>'
+            rec_len = struct.unpack(endian + 'i', reclen_raw)[0]
 
+        variables = _file.read(rec_len)
+        names = [var.strip().lower() for var in variables.split(",") if var.__len__() > 0]
+
+        self['time'] = struct.unpack(endian + 'd', _file.read(8))[0]
+        self['iter'] = struct.unpack(endian + '2i', _file.read(8))[0]
+
+        (I, J, K) = struct.unpack('3l', _file.read(24))
         self["ndim"] = 3
         self['grid'] = dmarray([I, J, K])
         self['grid'].attrs['gtype'] = 'Exponential'
@@ -42,43 +47,27 @@ class TecData(Model):
         self['grid'].attrs['ny'] = J
         self['grid'].attrs['nz'] = K
 
-    def __extract_aux_data(self, file):
-        for i in range(0, 1):
-            line = file.readline()
-            groups = re.search('AUXDATA (.*) = "(.*)"', line)
-
-            if groups.group(1).lower() == "time":
-                self['time'] = float(groups.group(2))
-
-    def read(self):
-        f = open(self.attrs['file'])
-        # self.attrs['title'] = self.__extract_from_string(f.readline())
-        names = map(str.lower, self.__extract_variables(f.readline()))
-        self.__extract_zone(f.readline())
-        self.__extract_aux_data(f)
-
         temp_data = dict()
 
         for i in range(0, names.__len__()):
             name = names[i].lower()
             temp_data[name] = dmarray(np.zeros(self['grid']))
 
-        # Read 3d data
-        for k in range(0, self['grid'][2]):
-            for j in range(0, self['grid'][1]):
-                for i in range(0, self['grid'][0]):
-                    data = f.readline().split()
+        for k in xrange(0, self['grid'][2]):
+            for j in xrange(0, self['grid'][1]):
+                for i in xrange(0, self['grid'][0]):
+                    # TODO: Magic number 15
+                    data = struct.unpack(endian + '15d', _file.read(names.__len__() * 8))
                     for ii in range(0, names.__len__()):
                         temp_data[names[ii]][i, j, k] = data[ii]
 
-        f.close()
+        _file.close()
 
         # Fill 2d data to plotting                
         k_middle = self['grid'][2] / 2
 
         # Units in planet radii
         self['x'] = temp_data['x'][:, 0, k_middle] * params.ab / params.planet_radius
-
         tmp = dmarray(np.zeros(self['grid'][1]))
         for j in range(0, self['grid'][1]):
             tmp[j] = temp_data['y'][0, j, k_middle]
@@ -93,3 +82,5 @@ class TecData(Model):
             for j in range(0, self['grid'][1]):
                 for i in range(0, self['grid'][0]):
                     self[name][j, i] = temp_data[name][i, j, k_middle]
+
+        del temp_data

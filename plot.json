@@ -1,34 +1,60 @@
 {
+  "tmp": "/Volumes/Storage/workspace/inasan/nurgush/3d/", 
   "data": {
-    "folder": "/Volumes/Storage/workspace/inasan/nurgush/exp_grid/",
-    "pattern": "*.dat",
+    "folder": "/Volumes/Storage/workspace/inasan/nurgush/3d_less_grid/",
+    "pattern": "a160000.dat",
     "start": 0,
-    "end": 1,
-    "target": "",
-    "create_target_dir": false
+    "target": "contours/",
+    "create_target_dir": false,
+    "data_type": "nurgushbin"
   },
   "figures": [
     {
+      "skip": false,
       "items": [
         "contour",
-        "roche_lobe"
+        "roche_lobe",
+        "velocity_filed"
       ],
       "save": false,
       "title": "T = 7500",
       "out_name": "contour_"
+    },
+    {
+      "skip": true,
+      "items": [
+        "slice_y"
+      ],
+      "save": false,
+      "title": "T = 7500",
+      "out_name": "slice_"
     }
   ],
   "types": {
     "contour": {
       "var": "log_rho",
-      "var_legend": "ln(rho)",
-      "levels_step": 0.1
+      "ylabel": "$R_{pl}$",
+      "xlabel": "$R_{pl}$",
+      "levels_step": 0.01
     },
     "roche_lobe": {
+    },
+    "velocity_filed": {
+      "levels": 50,
+      "freq": 15,
+      "scale": 70,
+      "width": 0.002
+    },
+    "slice_y": {
+      "var": "eps",
+      "y": 0.1,
+      "limits": [],
+      "label": [],
+      "ylabel": "$\\varepsilon$",
+      "xlabel": "$R_{pl}$"
     }
   },
   "execution": {
-    "nodes": 1,
-    "item_number": 0
+    "nodes": 2
   }
 }

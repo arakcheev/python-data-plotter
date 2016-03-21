@@ -1,6 +1,7 @@
 from spacepy.pybats import PbData
 import math
 import numpy as np
+import matplotlib.pyplot as plt
 
 __author__ = 'artem'
 import Parameters
@@ -19,7 +20,8 @@ class Model(PbData):
 
     def plot_contour(self, axes, _item_config):
         var = _item_config['var']
-        var_legend = _item_config['var_legend']
+        y_label = Model.get_or_else(_item_config, 'ylabel', "")
+        x_label = Model.get_or_else(_item_config, 'xlabel', "")
 
         levels_step = _item_config['levels_step']
 
@@ -30,13 +32,16 @@ class Model(PbData):
 
         axes.contour(self['x'], self['y'], self[var], levels)
 
-        axes.set_ylabel(var_legend)
-        axes.set_xlabel(r"R_{pl}")
+        axes.set_ylabel(y_label)
+        axes.set_xlabel(x_label)
 
-    def plot_velocity_filed(self, axes):
-        _levels = 50
+    def plot_velocity_filed(self, axes, _item_config):
+        # axes.streamplot(self['x'], self['y'], self['vx'], self['vy'], linewidth=2, cmap=plt.cm.autumn)
+        _levels = _item_config['levels']
         # How often arrows 
-        _freq = 15
+        _freq = _item_config['freq']
+        scale = _item_config['scale']
+        width = _item_config['width']
 
         # Build new linspace
         x = np.linspace(self['x'].min(), self['x'].max(), _levels)
@@ -54,7 +59,7 @@ class Model(PbData):
                         if x[k + 1] >= self['x'][i] >= x[k] and y[n + 1] >= self['y'][j] >= y[n]:
                             v_x[k, n] = _v
                             v_y[k, n] = _u
-        axes.quiver(x, y, v_x, v_y, scale=30, width=0.002)
+        axes.quiver(x, y, v_x, v_y, scale=scale, width=width)
 
     def plot_roche_lobe(self, axes, _item_config):
         _roche = np.zeros(self['rho'].shape)
@@ -71,14 +76,34 @@ class Model(PbData):
 
         axes.contour(self['x'], self['y'], _roche, roche_levels, colors="r", linewidths=[2])
 
-    def slice_y(self, var, y, axes, initial_data=None, y_limit=None, label="", *args, **kwargs):
+    @staticmethod
+    def get_or_else(json, item, or_else):
+        try:
+            return json[item]
+        except:
+            return or_else
 
-        if var in ['x', 'y', 'grid']:
+    def slice_y(self, axes, _item_config, initial_data, *args, **kwargs):
+        var = _item_config['var']
+        y = _item_config['y']
+        y_limit = _item_config['limits']
+        label = _item_config['label']
+
+        y_label = Model.get_or_else(_item_config, 'ylabel', "")
+        x_label = Model.get_or_else(_item_config, 'xlabel', "")
+
+        if type(y_limit) not in (tuple, list) or y_limit.__len__() is not 2:
+            y_limit = None
+
+        if var in ['x', 'y', 'grid', 'z']:
             raise KeyError('Invalid key for slice')
 
         ind = findCloasestIndex(self['y'], y)
 
-        plot = np.zeros(self['grid'].attrs['ny'])
+        if ind > self['y'].__len__() or ind < 0:
+            raise IndexError('Invalid index for slice')
+
+        plot = np.zeros(self['grid'].attrs['nx'])
 
         if initial_data is not None:
             for i in range(0, self['grid'].attrs['nx']):
@@ -103,16 +128,14 @@ class Model(PbData):
         else:
             y_min = plot.min()
 
-        # axes.set_xlabel(r'Rpl')
-        # axes.set_ylabel(r' $(\rho - \rho_{init})/\rho_{init}$ ')
+        axes.set_xlabel(x_label, fontsize=16)
+        axes.set_ylabel(y_label, fontsize=16)
         axes.set_ylim([y_min, y_max])
 
         # axes.plot((69.6, 69.6), (y_min, y_max), 'r--')
         # axes.plot((73.60, 73.60), (y_min, y_max), 'g--')
         # axes.plot((73.60 - 2.5 - 0.03, 73.60 - 2.5 - 0.03), (y_min, y_max), 'b--')
         # axes.plot((73.60 + 2.5, 73.60 + 2.5), (y_min, y_max), 'b--')
-
-        return (axes, self['y'][ind])
 
     def get_name(self):
         raise NotImplementedError("Please Implement this method")
