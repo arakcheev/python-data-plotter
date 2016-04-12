@@ -61,7 +61,7 @@ class TecData(Model):
 
         for i in range(0, names.__len__()):
             name = names[i].lower()
-            temp_data[name] = dmarray(np.zeros(self['grid']))
+            temp_data[name] = np.zeros((self['grid'][2], self['grid'][1], self['grid'][0]))
 
         # Read 3d data
         for k in range(0, self['grid'][2]):
@@ -69,27 +69,44 @@ class TecData(Model):
                 for i in range(0, self['grid'][0]):
                     data = f.readline().split()
                     for ii in range(0, names.__len__()):
-                        temp_data[names[ii]][i, j, k] = data[ii]
+                        temp_data[names[ii]][k, j, i] = data[ii]
 
         f.close()
 
-        # Fill 2d data to plotting                
-        k_middle = self['grid'][2] / 2
+        __dim = 2
 
-        # Units in planet radii
-        self['x'] = temp_data['x'][:, 0, k_middle] * params.ab / params.planet_radius
+        normalization = params.ab / params.planet_radius
 
-        tmp = dmarray(np.zeros(self['grid'][1]))
-        for j in range(0, self['grid'][1]):
-            tmp[j] = temp_data['y'][0, j, k_middle]
-        self['y'] = tmp * params.ab / params.planet_radius
+        k_middle = 0
+
+        if __dim == 2:
+            k_middle = self['grid'][2] / 2
+            self['x'] = temp_data['x'][k_middle, 0, :] * normalization
+            tmp = dmarray(np.zeros(self['grid'][1]))
+            for j in range(0, self['grid'][1]):
+                tmp[j] = temp_data['y'][k_middle, j, 0]
+                self['y'] = tmp * normalization
+
+        if __dim == 3:
+            self['x'] = temp_data['x'] * normalization
+            self['y'] = temp_data['y'] * normalization
+            self['z'] = temp_data['z'] * normalization
 
         for i in range(3, names.__len__()):
             name = names[i].lower()
-            self[name] = dmarray(np.zeros((self['grid'][1], self['grid'][0])))
+            if __dim == 2:
+                self[name] = np.zeros((self['grid'][1], self['grid'][0]))
+            if __dim == 3:
+                self[name] = np.zeros((self['grid'][2], self['grid'][1], self['grid'][0]))
 
         gen = (name for name in names if name not in ['x', 'y', 'z'])
         for name in gen:
-            for j in range(0, self['grid'][1]):
-                for i in range(0, self['grid'][0]):
-                    self[name][j, i] = temp_data[name][i, j, k_middle]
+            for k in range(0, self['grid'][2]):
+                for j in range(0, self['grid'][1]):
+                    for i in range(0, self['grid'][0]):
+                        if __dim == 2:
+                            self[name][j, i] = temp_data[name][k_middle, j, i]
+                        if __dim == 3:
+                            self[name][k, j, i] = temp_data[name][k, j, i]
+
+        del temp_data

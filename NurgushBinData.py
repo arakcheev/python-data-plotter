@@ -35,13 +35,14 @@ class NurgushBinData(Model):
 
         variables = _file.read(rec_len)
         names = [var.strip().lower() for var in variables.split(",") if var.__len__() > 0]
+        names[-1] = 'hz'
 
         self['time'] = struct.unpack(endian + 'd', _file.read(8))[0]
         self['iter'] = struct.unpack(endian + '2i', _file.read(8))[0]
 
         (I, J, K) = struct.unpack('3l', _file.read(24))
         self["ndim"] = 3
-        self['grid'] = dmarray([I, J, K])
+        self['grid'] = dmarray(np.array([I, J, K]))
         self['grid'].attrs['gtype'] = 'Exponential'
         self['grid'].attrs['nx'] = I
         self['grid'].attrs['ny'] = J
@@ -51,7 +52,7 @@ class NurgushBinData(Model):
 
         for i in range(0, names.__len__()):
             name = names[i].lower()
-            temp_data[name] = dmarray(np.zeros(self['grid']))
+            temp_data[name] = np.zeros(self['grid'])
 
         for k in xrange(0, self['grid'][2]):
             for j in xrange(0, self['grid'][1]):
@@ -62,25 +63,45 @@ class NurgushBinData(Model):
                         temp_data[names[ii]][i, j, k] = data[ii]
 
         _file.close()
+        print "file closed"
 
-        # Fill 2d data to plotting                
-        k_middle = self['grid'][2] / 2
+        __dim = 2
 
-        # Units in planet radii
-        self['x'] = temp_data['x'][:, 0, k_middle] * params.ab / params.planet_radius
-        tmp = dmarray(np.zeros(self['grid'][1]))
-        for j in range(0, self['grid'][1]):
-            tmp[j] = temp_data['y'][0, j, k_middle]
-        self['y'] = tmp * params.ab / params.planet_radius
+        normalization = params.ab / params.planet_radius
+
+        k_middle = 0
+
+        if __dim == 2:
+            k_middle = self['grid'][2] / 2
+            self['x'] = temp_data['x'][:, 0, k_middle] * normalization
+            tmp = np.zeros(self['grid'][1])
+            for j in range(0, self['grid'][1]):
+                tmp[j] = temp_data['y'][0, j, k_middle]
+                self['y'] = tmp * normalization
+
+        if __dim == 3:
+            self['x'] = temp_data['x'] * normalization
+            self['y'] = temp_data['y'] * normalization
+            self['z'] = temp_data['z'] * normalization
 
         for i in range(3, names.__len__()):
             name = names[i].lower()
-            self[name] = dmarray(np.zeros((self['grid'][1], self['grid'][0])))
+            if __dim == 2:
+                self[name] = np.zeros((self['grid'][1], self['grid'][0]))
+            if __dim == 3:
+                self[name] = np.zeros((self['grid'][0], self['grid'][1], self['grid'][2]))
 
         gen = (name for name in names if name not in ['x', 'y', 'z'])
-        for name in gen:
+
+        print "start fill"
+
+        for k in range(0, self['grid'][2]):
             for j in range(0, self['grid'][1]):
                 for i in range(0, self['grid'][0]):
-                    self[name][j, i] = temp_data[name][i, j, k_middle]
+                    for name in gen:
+                        if __dim == 2:
+                            self[name][i, j] = temp_data[name][i, j, k_middle]
+                        if __dim == 3:
+                            self[name][i, j, k] = temp_data[name][i, j, k]
 
         del temp_data

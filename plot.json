@@ -1,31 +1,29 @@
 {
-  "tmp": "/Volumes/Storage/workspace/inasan/nurgush/3d/", 
+  "tmp": "/Volumes/Storage/workspace/inasan/nurgush/magnetic/2/",
   "data": {
-    "folder": "/Volumes/Storage/workspace/inasan/nurgush/3d_less_grid/",
-    "pattern": "a160000.dat",
+    "folder": "/Users/artem/tmp/planet/testswmf/run/GM/IO2/",
+    "pattern": "z=0_ful_1_t00030321_n00004877.out",
     "start": 0,
-    "target": "contours/",
+    "target": "/Volumes/Storage/workspace/inasan/nurgush/magnetic/3/B/",
     "create_target_dir": false,
-    "data_type": "nurgushbin"
+    "data_type": "idl"
   },
   "figures": [
     {
       "skip": false,
       "items": [
-        "contour",
-        "roche_lobe",
-        "velocity_filed"
+        "contour"
       ],
       "save": false,
       "title": "T = 7500",
-      "out_name": "contour_"
+      "out_name": "field_"
     },
     {
       "skip": true,
       "items": [
         "slice_y"
       ],
-      "save": false,
+      "save": true,
       "title": "T = 7500",
       "out_name": "slice_"
     }
@@ -52,9 +50,11 @@
       "label": [],
       "ylabel": "$\\varepsilon$",
       "xlabel": "$R_{pl}$"
+    },
+    "plot_magnetic": {
     }
   },
   "execution": {
-    "nodes": 2
+    "nodes": 4
   }
 }

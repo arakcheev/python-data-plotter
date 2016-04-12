@@ -38,6 +38,7 @@ class PlotItem(dict):
         self['roche_lobe'] = self.roche_lobe
         self['velocity_filed'] = self.plot_velocity_filed
         self['slice_y'] = self.plot_slice_y
+        self['plot_magnetic'] = self.plot_magnetic
 
     def contour(self, _data, axes, _item_config):
         _data.plot_contour(axes, _item_config)
@@ -51,14 +52,27 @@ class PlotItem(dict):
     def plot_slice_y(self, _data, axes, _item_config):
         _data.slice_y(axes, _item_config, initial_file)
 
+    def plot_magnetic(self, _data, axes, _item_config):
+        _data.plot_magnetic(axes, _item_config)
+
 
 config = Configuration("plot.json")
 
 folder = config.get_or_else("data", "folder", "")
 pattern = config.get_or_else("data", "pattern", "*")
-target = folder + config.get_or_else("data", "target", "target")
+
+
+def get_target_dir():
+    target_from_config = str(config.get_or_else("data", "target", "target"))
+    if target_from_config.startswith("/"):
+        return target_from_config
+    else:
+        return folder + target_from_config
+
 
 is_create_target = config.getboolean_or_else("data", "create_target_dir", True)
+
+target = get_target_dir()
 
 if is_create_target:
     import os
@@ -132,7 +146,9 @@ def process_figures(file_index):
             is_save_figure = figure['save']
             fig, ax = plt.subplots()
             fig.suptitle(str(figure['title']) + str(_data.sub_title()))
+            fig.set_size_inches(15.5, 14.5)
             for item in items_on_figure:
+                print item
                 item_config = config.json['types'][item]
                 plot_items[item](_data, ax, item_config)
             if is_save_figure:

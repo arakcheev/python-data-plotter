@@ -3,6 +3,8 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 
+# from mayavi import mlab
+
 __author__ = 'artem'
 import Parameters
 import Utils
@@ -34,6 +36,9 @@ class Model(PbData):
 
         axes.set_ylabel(y_label)
         axes.set_xlabel(x_label)
+
+    def plot_magnetic_lines(self, axes, _item_config):
+        axes.streamplot(self['x'], self['y'], self['vx'], self['vy'], linewidth=2, cmap=plt.cm.autumn)
 
     def plot_velocity_filed(self, axes, _item_config):
         # axes.streamplot(self['x'], self['y'], self['vx'], self['vy'], linewidth=2, cmap=plt.cm.autumn)
@@ -82,6 +87,25 @@ class Model(PbData):
             return json[item]
         except:
             return or_else
+
+    def plot_magnetic(self, ax, _item_config):
+        bx = self['bx']
+        by = self['by']
+        bz = self['bz']
+        Bnorm = bx ** 2 + by ** 2 + bz ** 2
+
+        hx = self['hx']
+        hy = self['hy']
+        hz = self['hz']
+        Hnorm = hx ** 2 + hy ** 2 + hz ** 2
+
+        vx = self['vx']
+        vy = self['vy']
+        vz = self['vz']
+        V = vx ** 2 + vy ** 2 + vz ** 2
+
+        plot_var = (Bnorm)
+        ax.pcolormesh(self['x'], self['y'], plot_var)
 
     def slice_y(self, axes, _item_config, initial_data, *args, **kwargs):
         var = _item_config['var']
