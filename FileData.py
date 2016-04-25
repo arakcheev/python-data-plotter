@@ -23,7 +23,7 @@ class FileData(bats.Bats2d, Model):
 
         self['log_rho'] = np.log(self['rho'])
         self['T'] = np.log10((10e7 / 1.3806) * (self['p'] / (self['rho'])))
-        self['x'] -= 98.13
+        # self['x'] -= 98.13
         self['grid'].attrs['nx'] = self['grid'][0]
         self['grid'].attrs['ny'] = self['grid'][1]
 

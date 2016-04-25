@@ -91,9 +91,7 @@ class NurgushBinData(Model):
             if __dim == 3:
                 self[name] = np.zeros((self['grid'][0], self['grid'][1], self['grid'][2]))
 
-        gen = (name for name in names if name not in ['x', 'y', 'z'])
-
-        print "start fill"
+        gen = list((name for name in names if name not in ['x', 'y', 'z']))
 
         for k in range(0, self['grid'][2]):
             for j in range(0, self['grid'][1]):

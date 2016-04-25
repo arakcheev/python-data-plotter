@@ -1,12 +1,12 @@
 {
   "tmp": "/Volumes/Storage/workspace/inasan/nurgush/magnetic/2/",
   "data": {
-    "folder": "/Users/artem/tmp/planet/testswmf/run/GM/IO2/",
-    "pattern": "z=0_ful_1_t00030321_n00004877.out",
+    "folder": "/Users/artem/workspace/inasan/nurgushmpi/bin/data/",
+    "pattern": "a0.dat",
     "start": 0,
     "target": "/Volumes/Storage/workspace/inasan/nurgush/magnetic/3/B/",
     "create_target_dir": false,
-    "data_type": "idl"
+    "data_type": "nurgushbin"
   },
   "figures": [
     {
@@ -40,7 +40,7 @@
     "velocity_filed": {
       "levels": 50,
       "freq": 15,
-      "scale": 70,
+      "scale": 1000,
       "width": 0.002
     },
     "slice_y": {

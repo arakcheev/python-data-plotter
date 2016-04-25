@@ -29,7 +29,7 @@ class Model(PbData):
 
         var_min = self[var].min()
         var_max = self[var].max()
-
+        
         levels = np.arange(var_min, var_max, levels_step)
 
         axes.contour(self['x'], self['y'], self[var], levels)
