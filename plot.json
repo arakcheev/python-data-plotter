@@ -2,7 +2,7 @@
   "tmp": "/Volumes/Storage/workspace/inasan/nurgush/magnetic/2/",
   "data": {
     "folder": "/Users/artem/workspace/inasan/nurgushmpi/bin/data/",
-    "pattern": "a0.dat",
+    "pattern": "a000400.dat",
     "start": 0,
     "target": "/Volumes/Storage/workspace/inasan/nurgush/magnetic/3/B/",
     "create_target_dir": false,
@@ -12,7 +12,8 @@
     {
       "skip": false,
       "items": [
-        "contour"
+        "contour",
+        "velocity_filed"
       ],
       "save": false,
       "title": "T = 7500",
@@ -39,7 +40,7 @@
     },
     "velocity_filed": {
       "levels": 50,
-      "freq": 15,
+      "freq": 5,
       "scale": 1000,
       "width": 0.002
     },
